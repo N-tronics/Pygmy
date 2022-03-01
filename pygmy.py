@@ -11,19 +11,19 @@ data = [
 
 program = [
     (gb.PRNT, 'hw'),
-    (gb.PRNT, 'hi'),
+    (gb.PRNT, 'hj'),
     (gb.EXIT, 0)
 ]
 
 
 def simulate_file(filepath):
-    with open(filepath, 'r') as f:
-        code = f.readlines()
+    # with open(filepath, 'r') as f:
+    #    code = f.readlines()
     for instr in program:
         if instr[0] == gb.PRNT:
             addr = tuple(filter(lambda x: x[0] == instr[1], data))
-            if addr == ():
-                print("Variable %s not defined." % instr[1])
+            if not addr:
+                print("Symbol %s not defined." % instr[1])
                 sys.exit(1)
             addr = addr[0]
             for i in range(addr[2]):
@@ -36,8 +36,8 @@ def simulate_file(filepath):
 
 
 def compile_file(filepath):
-    with open(filepath, 'r') as f:
-        code = f.readlines()
+    # with open(filepath, 'r') as f:
+    #    code = f.readlines()
     # Basename of file. Eg: first.pg -> first
     basename = filepath.split('.')[0]
     asm_file = open('%s.asm' % basename, "w")
@@ -72,8 +72,8 @@ def compile_file(filepath):
     for instr in program:
         if instr[0] == gb.PRNT:
             addr = tuple(filter(lambda x: x[0] == instr[1], data))
-            if addr == ():
-                print("Invalid symbol %s." % instr[1])
+            if not addr:
+                print("Invalid symbol %s" % instr[1])
                 sys.exit(1)
             asm_file.write(f'    mov rax, {addr[0][0]}\n')
             asm_file.write(f'    mov rdi, {addr[0][2]}\n')
