@@ -11,5 +11,7 @@ def enum(reflow=False):
 
 
 # Operations
-PRNT  = enum(reflow=True)
-EXIT  = enum()
+PRNT    = enum(reflow=True)
+PRNTLN  = enum()
+EXIT    = enum()
+VAR     = enum()

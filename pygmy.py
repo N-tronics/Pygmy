@@ -5,13 +5,13 @@ import subprocess
 
 # Sample test program
 data = [
-    ('hw', 'Hello, World!\n\0', 15),
-    ('hi', 'Hi, World!\n', 11)
+    ('hw', 'Hello, World!', 13),
+    ('num', 12, 1)
 ]
 
 program = [
-    (gb.PRNT, 'hw'),
-    (gb.PRNT, 'hj'),
+    (gb.PRNTLN, 'hw'),
+    (gb.PRNTLN, 'num'),
     (gb.EXIT, 0)
 ]
 
@@ -26,10 +26,13 @@ def simulate_file(filepath):
                 print("Symbol %s not defined." % instr[1])
                 sys.exit(1)
             addr = addr[0]
-            for i in range(addr[2]):
-                if addr[1][i] == '\0':
-                    break
-                print(addr[1][i], end='')
+            if isinstance(addr[1], int):
+                print(addr[1])
+            else:
+                for i in range(addr[2]):
+                    if addr[1][i] == '\0':
+                        break
+                    print(addr[1][i], end='')
             # print(tuple(filter(lambda x: x[0] == instr[1], data))[0][1], end='')
         elif instr[0] == gb.EXIT:
             sys.exit(instr[1])
@@ -48,19 +51,24 @@ def compile_file(filepath):
     # Write the data section
     asm_file.write("section .data\n")
     for var in data:
-        terminate_data = False
-        asm_file.write("%s db '" % var[0])
-        for char in range(var[2]):
-            if var[1][char] == '\n':
-                asm_file.write("', 0ah")
-                if char == var[2] - 1: terminate_data = True
-                else: asm_file.write(', \'')
-            elif var[1][char] == '\0':
-                asm_file.write("', 0")
-                terminate_data = True
+        asm_file.write("%s db " % var[0])
+        if isinstance(var[1], int):
+            asm_file.write(f'{var[1]}')
+        else:
+            asm_file.write('\'')
+            add_comma = False
+            for char in range(var[2]):
+                if var[1][char] == '\n':
+                    asm_file.write("', 0ah")
+                    add_comma = True
+                elif var[1][char] == '\0':
+                    asm_file.write("', 0")
+                    break
+                else:
+                    if add_comma: asm_file.write(', \'')
+                    asm_file.write('%c' % var[1][char])
             else:
-                asm_file.write('%c' % var[1][char])
-        if not terminate_data: asm_file.write('\'')
+                asm_file.write('\'')
         asm_file.write('\n')
     asm_file.write('\n')
 
@@ -70,23 +78,29 @@ def compile_file(filepath):
     asm_file.write('_start:\n')
 
     for instr in program:
-        if instr[0] == gb.PRNT:
+        if instr[0] == gb.PRNT or instr[0] == gb.PRNTLN:
             addr = tuple(filter(lambda x: x[0] == instr[1], data))
             if not addr:
                 print("Invalid symbol %s" % instr[1])
                 sys.exit(1)
-            asm_file.write(f'    mov rax, {addr[0][0]}\n')
+            if isinstance(addr[0][1], int):
+                asm_file.write(f'    movzx rax, byte [{addr[0][0]}]\n')
+            else:
+                asm_file.write(f'    mov rax, {addr[0][0]}\n')
             asm_file.write(f'    mov rdi, {addr[0][2]}\n')
-            asm_file.write('    call prnt\n')
+            if isinstance(addr[0][1], int):
+                asm_file.write('    call prnti\n')
+            else:
+                asm_file.write('    call prnts\n')
+            if instr[0] == gb.PRNTLN: asm_file.write('    call prntlf\n')
         elif instr[0] == gb.EXIT:
-            asm_file.write('    mov rax, 3ch\n')
             asm_file.write(f'    mov rdi, {instr[1]}\n')
-            asm_file.write('    syscall\n')
+            asm_file.write( '    call exit\n')
     
     asm_file.close()
 
     # Compile the file and link with nasm and ld
-    subprocess.run(['nasm', '-felf64', '%s.asm' % basename])
+    subprocess.run(['nasm', '-felf64', '%s.asm' % basename, '-F', 'dwarf', '-g'])
     subprocess.run(['ld', '-o', basename, '%s.o' % basename])
 
 def launch_shell():
