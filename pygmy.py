@@ -99,9 +99,8 @@ def compile_file(filepath):
     
     asm_file.close()
 
-    # Compile the file and link with nasm and ld
-    subprocess.run(['nasm', '-felf64', '%s.asm' % basename, '-F', 'dwarf', '-g'])
-    subprocess.run(['ld', '-o', basename, '%s.o' % basename])
+    # Run the compilation script to compile and link asm file
+    subprocess.run(['./asm64.sh', basename])
 
 def launch_shell():
     cmd = input(gb.PROMPT)

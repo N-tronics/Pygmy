@@ -5,6 +5,7 @@
 tests/
 *.o
 *.asm
+*.lst
 !stdlib.asm
 
 # Byte-compiled / optimized / DLL files
